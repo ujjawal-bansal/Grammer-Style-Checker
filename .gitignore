@@ -1,0 +1,19 @@
+# Secrets: never commit real credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Tooling / OS
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.log
+.DS_Store
