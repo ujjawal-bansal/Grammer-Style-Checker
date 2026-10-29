@@ -9,6 +9,8 @@ two things are checked instead:
   and refuses to guess when an answer is ambiguous, a no-op, malformed or overlapping.
 """
 
+import re
+
 import pytest
 
 from core.apply import apply_accepted
@@ -69,6 +71,34 @@ def test_prompt_shows_the_contraction_fix_and_forbids_the_tense_rewrite():
 def test_prompt_examples_cover_correct_and_ambiguous_text():
     assert '"their car is red." and "she has lived here for years." are correct' in PROMPT
     assert '"i saw her duck." is ambiguous: no suggestion' in PROMPT
+
+
+def test_prompt_covers_punctuation_with_a_complete_fix_and_a_generic_example():
+    assert "comma splices" in PROMPT and "run-ons" in PROMPT
+    assert "fix it completely" in PROMPT
+    assert (
+        'original "closed however", replacement "closed; however," '
+        "(a comma splice; only the punctuation changes)"
+    ) in PROMPT
+    # the example is deliberately not one of the sentences used to evaluate the model
+    assert "park however" not in PROMPT
+
+
+def test_prompt_asks_for_spans_that_quote_only_the_words_that_change():
+    assert "quote only the words that change, not unchanged neighbours" in PROMPT
+
+
+def test_prompt_attaches_added_punctuation_to_the_word_before_it():
+    assert "quote the word immediately before the mark so the mark attaches to it" in PROMPT
+    assert "never put a space before ; , . ! ? or : in the replacement" in PROMPT
+    # the older wording allowed a one-word span after the space, which produced "park ; however,"
+    assert "quote just the word or words next to the mark" not in PROMPT
+
+
+def test_no_example_replacement_puts_a_space_before_punctuation():
+    replacements = re.findall(r'replacement "([^"]*)"', SYSTEM_PROMPT)
+    assert replacements  # the examples are really being checked
+    assert not [r for r in replacements if re.search(r"\s[;,.!?:]", r)]
 
 
 def test_prompt_keeps_its_security_and_output_rules():
@@ -182,6 +212,49 @@ def test_pronoun_case_and_agreement_are_two_independent_small_edits():
 def test_object_pronoun_after_a_preposition():
     result = check("Between you and I, it is fine.", [sug("you and I", "you and me")])
     assert corrected(result) == "Between you and me, it is fine."
+
+
+# ---------------------------------------------------------------- punctuation
+
+
+@pytest.mark.parametrize(
+    ("text", "original", "replacement", "expected"),
+    [
+        (
+            "The store was closed however we found another.",
+            "closed however",
+            "closed; however,",
+            "The store was closed; however, we found another.",
+        ),
+        (
+            "We went to the park however it rained.",
+            "park however",
+            "park; however,",
+            "We went to the park; however, it rained.",
+        ),
+        (
+            "It was late therefore we left.",
+            "late therefore",
+            "late; therefore,",
+            "It was late; therefore, we left.",
+        ),
+    ],
+)
+def test_a_complete_punctuation_fix_is_located_and_applied_without_changing_the_words(
+    text, original, replacement, expected
+):
+    result = check(text, [sug(original, replacement, "Comma splice; punctuate both sides.")])
+    (s,) = result.suggestions
+    assert text[s.start : s.end] == original  # span located exactly, ends on a word boundary
+    fixed = corrected(result)
+    assert fixed == expected
+    assert fixed.replace(";", "").replace(",", "").split() == text.split()  # only punctuation
+
+
+def test_a_half_fix_is_still_applied_exactly_as_given_never_improved_silently():
+    text = "We went to the park however it rained."
+    result = check(text, [sug("park however", "park, however", "Missing comma.")])
+    assert corrected(result) == "We went to the park, however it rained."
 
 
 # ---------------------------------------------------------------- already-correct text

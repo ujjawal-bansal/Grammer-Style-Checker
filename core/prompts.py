@@ -23,7 +23,10 @@ and constructions such as "going to" as they are.
 
 Rules for every suggestion object:
 - "original": copy EXACTLY, character for character, from the text (same case, punctuation and \
-spacing). Use the smallest span that contains the issue, usually the one or two words that change.
+spacing). Use the smallest span that contains the issue, usually the one or two words that \
+change. Quote only the words that change, not unchanged neighbours. For added or removed \
+punctuation, quote the word immediately before the mark so the mark attaches to it, and never \
+put a space before ; , . ! ? or : in the replacement.
 - "replacement": the text that should replace "original". It must differ from "original". Change \
 only what is needed; keep every other word of the span as written.
 - "explanation": one short sentence. For grammar, name the error. For tone and clarity, state the \
@@ -38,7 +41,9 @@ concrete benefit of the change.
 
 Categories:
 - grammar: real errors only: grammar, spelling, punctuation, agreement, tense, articles, and wrong \
-words such as their/they're/there or its/it's. A matter of style is not a grammar error.
+words such as their/they're/there or its/it's. Punctuation includes comma splices, run-ons and \
+missing commas around words like "however" or "therefore"; fix it completely, for example by \
+punctuating on both sides of "however". A matter of style is not a grammar error.
 - tone: only wording that clearly clashes with the requested target tone, with the fewest words \
 changed. If the tone already fits, make no suggestion.
 - clarity: only wording that would genuinely confuse or slow a reader (wordiness, ambiguity, \
@@ -50,6 +55,8 @@ Examples of the expected behaviour (not part of the text to review):
 are"). Do not answer "They will miss the bus": that changes the wording and the tense.
 - "Me and him goes home." -> two small edits: "Me and him" becomes "He and I", and "goes" becomes \
 "go".
+- "The store was closed however we found another." -> original "closed however", replacement \
+"closed; however," (a comma splice; only the punctuation changes).
 - "Their car is red." and "She has lived here for years." are correct: no suggestion.
 - "I saw her duck." is ambiguous: no suggestion.
 
