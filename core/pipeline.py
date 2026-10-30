@@ -6,6 +6,7 @@ from __future__ import annotations
 import logging
 import math
 import re
+from collections.abc import Callable
 from typing import Any
 
 from core.apply import assign_ids, locate_suggestions, resolve_overlaps
@@ -147,17 +148,26 @@ def run_check(
     options: CheckOptions,
     settings: Settings,
     client: Any | None = None,
+    progress: Callable[[int, int], None] | None = None,
 ) -> CheckResult:
     """Check `text`. Raises InputValidationError for bad input (no API call is made).
     API failures never raise: they are recorded as section issues next to any valid
-    suggestions obtained from the sections that did succeed."""
+    suggestions obtained from the sections that did succeed.
+
+    `progress(done, total)` is called before each section and once at the end, so a UI can
+    show how far a long text has got. Halving an oversized section does not change `total`.
+    """
     validate_input(text, settings)
     client = client or GroqClient(settings)
     chunks = chunk_text(text, settings.max_chunk_words)
 
     run = _Run(client, options)
-    for chunk in chunks:
+    for done, chunk in enumerate(chunks):
+        if progress is not None:
+            progress(done, len(chunks))
         run.process(chunk)
+    if progress is not None:
+        progress(len(chunks), len(chunks))
 
     kept, overlaps = resolve_overlaps(run.suggestions)
     result = CheckResult(

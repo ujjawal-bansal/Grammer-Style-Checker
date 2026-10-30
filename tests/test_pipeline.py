@@ -361,3 +361,39 @@ def test_unsplittable_chunk_is_reported_as_failed():
     setup = Setup([too_large()])
     result = setup.run("Supercalifragilistic")
     assert [i.kind for i in result.issues] == ["failed"] and len(setup.fake.calls) == 1
+
+
+# ---------------------------------------------------------------- progress reporting
+
+
+def run_with_progress(setup, text=TEXT):
+    seen: list[tuple[int, int]] = []
+    result = run_check(
+        text, CheckOptions(), setup.settings, setup.client, progress=lambda *a: seen.append(a)
+    )
+    return result, seen
+
+
+def test_progress_is_reported_before_each_section_and_at_the_end():
+    setup = Setup(three_chunk_script(), max_chunk_words=5)
+    result, seen = run_with_progress(setup)
+    assert seen == [(0, 3), (1, 3), (2, 3), (3, 3)]
+    assert len(result.suggestions) == 4  # reporting progress changes nothing else
+
+
+def test_a_split_section_does_not_change_the_reported_total():
+    script = [too_large(), ok_response([]), ok_response([])]
+    _, seen = run_with_progress(Setup(script, max_chunk_words=8), TWO_SENTENCES)
+    assert seen == [(0, 1), (1, 1)]
+
+
+def test_progress_still_completes_when_a_section_fails():
+    headers = {"x-ratelimit-remaining-requests": "0", "x-ratelimit-reset-requests": "7m"}
+    script = [ok_response([]), rate_limit(headers)]
+    result, seen = run_with_progress(Setup(script, max_chunk_words=5))
+    assert seen[-1] == (3, 3) and result.is_partial
+
+
+def test_invalid_input_reports_no_progress():
+    with pytest.raises(InputValidationError):
+        run_with_progress(Setup([]), "   ")
