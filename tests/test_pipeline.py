@@ -207,7 +207,7 @@ def test_unverifiable_suggestions_are_counted_and_reported_not_hidden():
     items = [
         sug("has", "have", "I "),  # fine
         sug("not in the text", "x"),  # not found
-        sug("same", "same"),  # no-op (reported separately)
+        sug("today", "today"),  # no-op (reported separately)
         {"category": "grammar", "original": "x"},  # malformed item
         sug("apple", "apples"),
         sug("a apple", "an apple"),  # overlaps "apple"

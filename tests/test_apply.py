@@ -96,6 +96,16 @@ def test_no_op_suggestions_are_reported_separately():
     assert found == [] and dropped[0].reason == "no_op"
 
 
+def test_an_echoed_correction_that_is_not_in_the_text_is_unverified_not_a_no_op():
+    # The model sometimes copies its corrected text into both fields. That is a failed
+    # suggestion, so it is counted as unverified instead of being silently ignored.
+    found, dropped = locate(
+        "We went to the park however it rained.",
+        raw("park; however, it rained", "park; however, it rained"),
+    )
+    assert found == [] and dropped[0].reason == "not_found"
+
+
 def test_matching_is_exact_not_fuzzy():
     found, dropped = locate("It is  double spaced", raw("is double", "is"))
     assert found == [] and dropped[0].reason == "not_found"

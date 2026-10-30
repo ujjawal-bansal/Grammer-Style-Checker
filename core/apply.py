@@ -77,7 +77,10 @@ def locate_suggestions(
     dropped: list[DroppedSuggestion] = []
     for raw in raws:
         if raw.original == raw.replacement:
-            reason: str | None = "no_op"
+            # A true no-op quotes the text; a quote that is not in the text is the model echoing
+            # its own correction, which is a failed suggestion and must be reported as such.
+            in_text = bool(find_occurrences(chunk.text, raw.original))
+            reason: str | None = "no_op" if in_text else "not_found"
             span: tuple[int, int] | None = None
         else:
             located = locate_in_text(chunk.text, raw)

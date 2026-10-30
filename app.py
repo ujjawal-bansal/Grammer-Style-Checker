@@ -263,7 +263,16 @@ def _render_result(result: CheckResult, current_text: str, can_check: bool) -> N
     _render_unverified(result)
 
     if not result.suggestions:
-        if not result.issues:
+        if result.unverified_count:
+            # The model did report problems, they just could not be verified: never call the
+            # text clean in that case.
+            st.warning(
+                "No suggestions can be shown for this text, so it has not been confirmed as "
+                "correct. Checking again often helps.",
+                icon=":material/warning:",
+            )
+            _try_again_button(can_check)
+        elif not result.issues:
             st.html(ui.clean_result_html())
         return
 

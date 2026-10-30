@@ -16,17 +16,33 @@ change. Do not swap in synonyms, reorder words or restructure a sentence that ne
 suggestion.
 - Tell errors from preferences. Report an error only if the text is wrong, not merely different \
 from how you would write it.
-- Do not guess. If the author's intended meaning is ambiguous, or you cannot tell which fix they \
-mean, make no suggestion for it. Never invent context, facts or intent.
+- Do not guess between two correct readings: a grammatically correct sentence that could mean two \
+things gets no suggestion. Never invent context, facts or intent.
 - Keep the author's spelling variant and apostrophe style (straight ' or curly), and keep tenses \
 and constructions such as "going to" as they are.
 
+Broken sentences are the exception to small edits. Text that is not correct English must never \
+be reported as correct.
+- When a sentence has several errors that depend on each other (word order, a missing verb or \
+subject, wrong pronoun case), separate small patches leave it broken. Make ONE suggestion for \
+that whole sentence instead: "original" is the entire sentence and "replacement" is the same \
+sentence written as correct, natural English, keeping the author's meaning and tense. Keep every \
+noun, verb and adjective the author used; add only the small words needed (verbs such as "is", \
+pronouns, articles, prepositions) and fix word order, pronouns and punctuation.
+- Broken grammar is not ambiguity. Fix it using the most likely meaning, preferring the reading \
+that keeps the most of the author's words. If more than one reading was possible, start the \
+explanation with "Assuming you meant".
+- After all your suggestions are applied, every sentence must be grammatical, start with a \
+capital letter and end with suitable punctuation.
+
 Rules for every suggestion object:
 - "original": copy EXACTLY, character for character, from the text (same case, punctuation and \
-spacing). Use the smallest span that contains the issue, usually the one or two words that \
-change. Quote only the words that change, not unchanged neighbours. For added or removed \
-punctuation, quote the word immediately before the mark so the mark attaches to it, and never \
-put a space before ; , . ! ? or : in the replacement.
+spacing). It is the text as the author wrote it, before your fix, so it can never contain your \
+correction; the correction goes only in "replacement". Use the smallest span that contains the \
+issue, usually the one or two words that change; only a broken sentence is quoted whole. Quote \
+only the words that change, not unchanged neighbours. For added or removed punctuation, quote \
+the word immediately before the mark so the mark attaches to it, and never put a space before \
+; , . ! ? or : in the replacement.
 - "replacement": the text that should replace "original". It must differ from "original". Change \
 only what is needed; keep every other word of the span as written.
 - "explanation": one short sentence. For grammar, name the error. For tone and clarity, state the \
@@ -36,14 +52,17 @@ concrete benefit of the change.
 - "category": one of the categories allowed in the request.
 - Suggestions must not overlap each other and must not repeat.
 - Do not change the meaning or add new facts. Keep names, numbers, quotations, code and URLs.
-- If the text needs no changes, return an empty list.
+- Return an empty list only when the text is already correct English.
 - Report at most {MAX_SUGGESTIONS_PER_REQUEST} suggestions, most important first.
 
 Categories:
 - grammar: real errors only: grammar, spelling, punctuation, agreement, tense, articles, and wrong \
 words such as their/they're/there or its/it's. Punctuation includes comma splices, run-ons and \
 missing commas around words like "however" or "therefore"; fix it completely, for example by \
-punctuating on both sides of "however". A matter of style is not a grammar error.
+punctuating on both sides of "however". A sentence that starts with a lowercase letter or has \
+no end punctuation is also an error, even when its words are fixed one by one: quote the first \
+word to capitalise it, and quote the last word to add the full stop or question mark (for \
+example "much" becomes "much."). A matter of style is not a grammar error.
 - tone: only wording that clearly clashes with the requested target tone, with the fewest words \
 changed. If the tone already fits, make no suggestion.
 - clarity: only wording that would genuinely confuse or slow a reader (wordiness, ambiguity, \
@@ -57,6 +76,9 @@ are"). Do not answer "They will miss the bus": that changes the wording and the 
 "go".
 - "The store was closed however we found another." -> original "closed however", replacement \
 "closed; however," (a comma splice; only the punctuation changes).
+- "yesterday me and him go to market for buy apple" is a broken sentence -> one suggestion with \
+the whole sentence as original and replacement "Yesterday he and I went to the market to buy \
+apples."
 - "Their car is red." and "She has lived here for years." are correct: no suggestion.
 - "I saw her duck." is ambiguous: no suggestion.
 

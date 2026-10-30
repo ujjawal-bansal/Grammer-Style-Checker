@@ -180,7 +180,7 @@ def test_over_limit_input_is_blocked_before_any_api_call(api, monkeypatch):
 
 def test_unverifiable_suggestions_are_reported_to_the_user(api):
     api.completions.script = [
-        ok_response([sug("has", "have", "I "), sug("not in the text", "x"), sug("same", "same")])
+        ok_response([sug("has", "have", "I "), sug("not in the text", "x"), sug("like", "like")])
     ]
     at = check(new_app())
     message = at.info[0].value
@@ -248,6 +248,21 @@ def test_unexpected_errors_are_shown_generically(api, monkeypatch):
     assert not at.exception
     assert at.error[0].value == "Something went wrong while checking your text. Please try again."
     assert not any("super secret" in t or FAKE_API_KEY in t for t in all_text(at))
+
+
+def test_text_is_never_called_clean_when_every_suggestion_was_unverifiable(api):
+    # e.g. the model echoed its own correction, which is not in the text
+    api.completions.script = [
+        ok_response([sug("has an apple", "has an apple")]),
+        ok_response([sug("have", "have")]),
+    ]
+    at = check(new_app())
+    page = html_text(at)
+    assert "No issues found" not in page
+    assert any("not been confirmed as correct" in w.value for w in at.warning)
+    assert any("could not be verified" in i.value for i in at.info)
+    at.button(key="retry").click().run()  # one click checks the same text again
+    assert len(api.calls) == 2
 
 
 def test_example_button_fills_the_box_without_calling_the_api(api):
