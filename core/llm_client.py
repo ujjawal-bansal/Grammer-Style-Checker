@@ -76,6 +76,31 @@ def rate_limit_from_headers(headers: Mapping[str, str]) -> RateLimitError:
     return RateLimitError("unknown")
 
 
+_GENERATION_FAILURE_CODES = {"json_validate_failed", "output_parse_failed", "tool_use_failed"}
+
+
+def _error_details(exc: Exception) -> dict[str, Any]:
+    body = getattr(exc, "body", None)
+    if not isinstance(body, dict):
+        return {}
+    inner = body.get("error", body)
+    return inner if isinstance(inner, dict) else {}
+
+
+def _error_code(exc: Exception) -> str:
+    """The short machine-readable error code, safe to log (never the message or the body)."""
+    code = _error_details(exc).get("code")
+    return code if isinstance(code, str) and re.fullmatch(r"[a-z0-9_]{1,40}", code) else "n/a"
+
+
+def _is_generation_failure(exc: Exception) -> bool:
+    """Groq answers HTTP 400 when the model's own output fails validation; the error body then
+    carries a `failed_generation` field or one of a few codes. That is retryable, not a
+    configuration problem."""
+    details = _error_details(exc)
+    return "failed_generation" in details or details.get("code") in _GENERATION_FAILURE_CODES
+
+
 def map_groq_exception(exc: Exception, model: str) -> CheckerError:
     """Translate an SDK exception into a typed, user-presentable error (no raw payloads)."""
     if isinstance(exc, groq.APITimeoutError):
@@ -101,6 +126,8 @@ def map_groq_exception(exc: Exception, model: str) -> CheckerError:
             if "context length" in text or "context_length" in text or "too large" in text:
                 return TokenLimitError()
             if "generated json" in text or "json_validate_failed" in text:
+                return InvalidOutputError()
+            if _is_generation_failure(exc):  # the model's output was rejected: retry it
                 return InvalidOutputError()
             return ApiError(
                 "Groq rejected the request (HTTP 400). If you changed GROQ_MODEL, check that the "
@@ -155,9 +182,10 @@ class GroqClient:
             response = self._get_client().chat.completions.create(**kwargs)
         except groq.APIError as exc:
             logger.warning(
-                "Groq call failed: %s (HTTP %s)",
+                "Groq call failed: %s (HTTP %s, code %s)",
                 type(exc).__name__,
                 getattr(exc, "status_code", "n/a"),
+                _error_code(exc),
             )
             raise map_groq_exception(exc, s.model) from None
 

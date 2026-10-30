@@ -258,6 +258,51 @@ def test_bad_request_variants():
     assert "GROQ_MODEL" in exc.value.user_message and len(h.fake.calls) == 1
 
 
+def bad_request_with_body(body, message="Bad request"):
+    response = httpx.Response(400, request=REQ)
+    return groq.BadRequestError(message, response=response, body=body)
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"error": {"code": "json_validate_failed", "failed_generation": "{...}"}},
+        {"error": {"code": "output_parse_failed"}},
+        {"error": {"code": "tool_use_failed"}},
+        {"error": {"code": "something_new", "failed_generation": "partial output"}},
+    ],
+)
+def test_a_rejected_model_generation_is_retried_as_malformed_output(body):
+    h = Harness([bad_request_with_body(body), ok_response()])
+    h.run()
+    assert len(h.fake.calls) == 2  # retried instead of being reported as a config problem
+
+
+def test_a_rejected_generation_on_every_attempt_is_reported_as_malformed_output():
+    body = {"error": {"code": "json_validate_failed"}}
+    h = Harness([bad_request_with_body(body) for _ in range(3)])
+    with pytest.raises(InvalidOutputError):
+        h.run()
+    assert len(h.fake.calls) == 3
+
+
+def test_other_bad_requests_are_still_configuration_errors():
+    body = {"error": {"code": "invalid_request_error", "message": "unsupported parameter"}}
+    h = Harness([bad_request_with_body(body), ok_response()])
+    with pytest.raises(ApiError) as exc:
+        h.run()
+    assert "GROQ_MODEL" in exc.value.user_message and len(h.fake.calls) == 1
+
+
+def test_only_a_short_error_code_is_logged_never_the_message(caplog):
+    body = {"error": {"code": "json_validate_failed", "message": "secret-looking text gsk_abc"}}
+    h = Harness([bad_request_with_body(body, "secret-looking text gsk_abc"), ok_response()])
+    with caplog.at_level("WARNING", logger="grammar_checker.llm"):
+        h.run()
+    logged = " ".join(r.getMessage() for r in caplog.records)
+    assert "code json_validate_failed" in logged and "secret-looking" not in logged
+
+
 def test_unexpected_sdk_error_becomes_api_error():
     h = Harness([groq.APIError("weird", request=REQ, body=None)])
     with pytest.raises(ApiError):
