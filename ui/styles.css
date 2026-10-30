@@ -1,0 +1,512 @@
+/*
+ * Grammar & Style Checker: a small style layer on top of the Streamlit theme set in
+ * .streamlit/config.toml. Colours live in one place below; the classes prefixed `gsc-`
+ * belong to the HTML fragments in ui/components.py, and `.st-key-*` selectors target
+ * Streamlit containers and widgets by the key they are given in app.py.
+ */
+
+:root {
+    --gsc-paper: #fbf8f2;
+    --gsc-raised: #fffdf9;
+    --gsc-sunk: #f3eee4;
+    --gsc-line: #e3d9c7;
+    --gsc-ink: #23201a;
+    --gsc-ink-2: #4a4336;
+    --gsc-ink-3: #665d4d;
+
+    --gsc-accent: #9a4511;
+    --gsc-accent-soft: #f7e7d5;
+    --gsc-good: #2d6639;
+    --gsc-good-soft: #e3efe5;
+    --gsc-bad: #94382e;
+    --gsc-bad-soft: #f8e3df;
+    --gsc-pending-soft: #fbecc4;
+    --gsc-tone: #3b5a80;
+    --gsc-tone-soft: #e4ebf4;
+    --gsc-clarity: #33664f;
+    --gsc-clarity-soft: #e1eee8;
+
+    --gsc-serif: "Iowan Old Style", "Charter", "Palatino Linotype", Palatino, Georgia, serif;
+    --gsc-radius: 14px;
+}
+
+/* ---------------------------------------------------------------- page frame */
+
+[data-testid="stMainBlockContainer"],
+.block-container {
+    max-width: 1180px;
+    padding-top: 2.25rem;
+    padding-bottom: 4rem;
+}
+
+[data-testid="stHeader"] {
+    background: transparent;
+}
+
+:focus-visible {
+    outline: 2px solid var(--gsc-accent) !important;
+    outline-offset: 2px;
+}
+
+.gsc-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+/* ---------------------------------------------------------------- header */
+
+.gsc-header {
+    margin: 0 0 0.5rem;
+}
+
+.gsc-eyebrow {
+    margin: 0 0 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gsc-accent);
+}
+
+.gsc-title {
+    margin: 0;
+    padding: 0;
+    font-family: var(--gsc-serif);
+    font-size: clamp(1.9rem, 4vw, 2.6rem);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    color: var(--gsc-ink);
+}
+
+.gsc-lede {
+    margin: 0.6rem 0 0;
+    max-width: 62ch;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--gsc-ink-2);
+}
+
+/* ---------------------------------------------------------------- composer */
+
+.st-key-composer {
+    background: var(--gsc-raised);
+    border: 1px solid var(--gsc-line);
+    border-radius: var(--gsc-radius);
+    padding: 1.25rem 1.35rem 1.1rem;
+    box-shadow: 0 1px 2px rgba(35, 32, 26, 0.05);
+}
+
+.st-key-input_text textarea {
+    font-family: var(--gsc-serif);
+    font-size: 1.06rem;
+    line-height: 1.7;
+    color: var(--gsc-ink);
+}
+
+.gsc-count {
+    margin: 0;
+    font-size: 0.85rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--gsc-ink-3);
+}
+
+.gsc-count--ok {
+    color: var(--gsc-good);
+}
+
+.gsc-count--over {
+    color: var(--gsc-bad);
+    font-weight: 600;
+}
+
+.gsc-hint {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--gsc-ink-3);
+}
+
+/* ---------------------------------------------------------------- empty state */
+
+.gsc-empty {
+    margin-top: 0.5rem;
+    padding: 1.4rem 1.5rem;
+    border: 1px dashed var(--gsc-line);
+    border-radius: var(--gsc-radius);
+    background: transparent;
+}
+
+.gsc-steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem 1.5rem;
+}
+
+.gsc-step {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    color: var(--gsc-ink);
+}
+
+.gsc-step__num {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--gsc-accent);
+    background: var(--gsc-accent-soft);
+}
+
+.gsc-step__body {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.88rem;
+    color: var(--gsc-ink-3);
+}
+
+.gsc-empty__note {
+    margin: 1rem 0 0;
+    font-size: 0.85rem;
+    color: var(--gsc-ink-3);
+}
+
+/* ---------------------------------------------------------------- summary */
+
+.gsc-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.25rem;
+    padding: 1rem 1.25rem;
+    background: var(--gsc-raised);
+    border: 1px solid var(--gsc-line);
+    border-radius: var(--gsc-radius);
+}
+
+.gsc-summary__head {
+    margin: 0;
+    font-family: var(--gsc-serif);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--gsc-ink);
+}
+
+.gsc-summary__chips,
+.gsc-summary__tally {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.gsc-summary__tally {
+    margin-left: auto;
+}
+
+.gsc-chip,
+.gsc-tally {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.gsc-chip__n {
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+}
+
+.gsc-chip--grammar {
+    color: var(--gsc-accent);
+    background: var(--gsc-accent-soft);
+}
+
+.gsc-chip--tone {
+    color: var(--gsc-tone);
+    background: var(--gsc-tone-soft);
+}
+
+.gsc-chip--clarity {
+    color: var(--gsc-clarity);
+    background: var(--gsc-clarity-soft);
+}
+
+.gsc-tally {
+    font-weight: 500;
+    color: var(--gsc-ink-2);
+    background: var(--gsc-sunk);
+}
+
+.gsc-tally--accepted {
+    color: var(--gsc-good);
+    background: var(--gsc-good-soft);
+}
+
+.gsc-tally--rejected {
+    color: var(--gsc-bad);
+    background: var(--gsc-bad-soft);
+}
+
+/* ---------------------------------------------------------------- suggestion groups and cards */
+
+.gsc-group {
+    margin: 0.75rem 0 0.1rem;
+}
+
+.gsc-group__title {
+    margin: 0;
+    padding: 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gsc-ink-2);
+}
+
+.gsc-group--grammar .gsc-group__title {
+    color: var(--gsc-accent);
+}
+
+.gsc-group--tone .gsc-group__title {
+    color: var(--gsc-tone);
+}
+
+.gsc-group--clarity .gsc-group__title {
+    color: var(--gsc-clarity);
+}
+
+.gsc-group__n {
+    margin-left: 0.25rem;
+    padding: 0.05rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    letter-spacing: 0;
+    background: var(--gsc-sunk);
+    color: var(--gsc-ink-2);
+}
+
+.gsc-group__hint {
+    margin: 0.15rem 0 0;
+    font-size: 0.82rem;
+    color: var(--gsc-ink-3);
+}
+
+[class*="st-key-card_"] {
+    background: var(--gsc-raised);
+    border-color: var(--gsc-line) !important;
+}
+
+.gsc-card {
+    padding-left: 0.85rem;
+    border-left: 3px solid var(--gsc-accent);
+}
+
+.gsc-card--tone {
+    border-left-color: var(--gsc-tone);
+}
+
+.gsc-card--clarity {
+    border-left-color: var(--gsc-clarity);
+}
+
+.gsc-card__status {
+    margin: 0 0 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gsc-ink-3);
+}
+
+.gsc-status--accepted {
+    color: var(--gsc-good);
+}
+
+.gsc-status--rejected {
+    color: var(--gsc-bad);
+}
+
+.gsc-diff {
+    margin: 0;
+    font-family: var(--gsc-serif);
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--gsc-ink);
+    overflow-wrap: anywhere;
+}
+
+.gsc-diff del,
+.gsc-legend del {
+    padding: 0 0.15rem;
+    border-radius: 3px;
+    color: var(--gsc-bad);
+    background: var(--gsc-bad-soft);
+    text-decoration-thickness: 1.5px;
+}
+
+.gsc-diff ins,
+.gsc-legend ins {
+    padding: 0 0.15rem;
+    border-radius: 3px;
+    color: var(--gsc-good);
+    background: var(--gsc-good-soft);
+    text-decoration: none;
+}
+
+.gsc-diff__remove {
+    font-style: italic;
+}
+
+.gsc-diff__arrow {
+    margin: 0 0.4rem;
+    color: var(--gsc-ink-3);
+}
+
+.gsc-card--rejected .gsc-diff {
+    opacity: 0.7;
+}
+
+.gsc-why {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: var(--gsc-ink-2);
+}
+
+/* ---------------------------------------------------------------- preview and corrected text */
+
+.st-key-preview_panel,
+.st-key-corrected_panel {
+    background: var(--gsc-raised);
+    border: 1px solid var(--gsc-line);
+    border-radius: var(--gsc-radius);
+    padding: 1rem 1.15rem;
+}
+
+.st-key-preview_panel [data-testid="stHtml"] > div {
+    font-family: var(--gsc-serif);
+    font-size: 1.04rem;
+    color: var(--gsc-ink);
+}
+
+.gsc-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1rem;
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--gsc-ink-3);
+}
+
+.gsc-legend__mark {
+    padding: 0 0.15rem;
+    border-radius: 3px;
+    color: var(--gsc-ink);
+    background: var(--gsc-pending-soft);
+}
+
+.gsc-legend__rejected {
+    border-bottom: 1.5px dotted var(--gsc-ink-3);
+}
+
+.st-key-corrected_panel [data-testid="stCode"] pre,
+.st-key-corrected_panel [data-testid="stCode"] code {
+    font-family: var(--gsc-serif) !important;
+    font-size: 1.04rem !important;
+    line-height: 1.7 !important;
+    white-space: pre-wrap !important;
+    color: var(--gsc-ink) !important;
+    background: var(--gsc-paper) !important;
+}
+
+/* The built-in copy button sits in a toolbar wrapper that is hidden until hover. Keep it
+   visible so it can be found without a mouse, and leave room so it never covers the text. */
+.st-key-corrected_panel [data-testid="stCode"] > div,
+.st-key-corrected_panel [data-testid="stCode"] > div * {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.st-key-corrected_panel [data-testid="stCode"] pre {
+    padding-right: 2.75rem !important;
+}
+
+/* ---------------------------------------------------------------- clean result */
+
+.gsc-clean {
+    display: flex;
+    gap: 0.9rem;
+    align-items: flex-start;
+    padding: 1.1rem 1.25rem;
+    background: var(--gsc-good-soft);
+    border: 1px solid #c9e0cd;
+    border-radius: var(--gsc-radius);
+}
+
+.gsc-clean__icon {
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: var(--gsc-good);
+    font-weight: 700;
+}
+
+.gsc-clean__title {
+    margin: 0;
+    font-weight: 600;
+    color: var(--gsc-ink);
+}
+
+.gsc-clean__body {
+    margin: 0.2rem 0 0;
+    font-size: 0.9rem;
+    color: var(--gsc-good);
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.gsc-footer {
+    margin: 2.5rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--gsc-line);
+    font-size: 0.8rem;
+    color: var(--gsc-ink-3);
+}
+
+/* ---------------------------------------------------------------- small screens */
+
+@media (max-width: 640px) {
+    [data-testid="stMainBlockContainer"],
+    .block-container {
+        padding-top: 1.25rem;
+    }
+
+    .st-key-composer {
+        padding: 1rem;
+    }
+
+    .gsc-summary__tally {
+        margin-left: 0;
+    }
+}

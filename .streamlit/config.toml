@@ -1,2 +1,18 @@
 [browser]
 gatherUsageStats = false
+
+[client]
+# Hide the "Deploy" button and developer menu items; this is an end-user tool.
+toolbarMode = "minimal"
+
+# Warm, light "paper and ink" theme. The same colours are used in ui/styles.css.
+[theme]
+base = "light"
+primaryColor = "#9a4511"
+backgroundColor = "#fbf8f2"
+secondaryBackgroundColor = "#f3eee4"
+textColor = "#23201a"
+borderColor = "#e3d9c7"
+showWidgetBorder = true
+baseRadius = "10px"
+headingFont = "serif"

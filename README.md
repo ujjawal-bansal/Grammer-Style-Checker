@@ -5,7 +5,8 @@ reject each suggestion individually. Built with Python, Streamlit and the Groq A
 
 ## Features
 
-- Three checks you can switch on/off: grammar, tone (with a target tone), clarity.
+- Three checks you can switch on/off right under the text box: grammar, tone (with a target
+  tone), clarity.
 - **Span-based suggestions**: every suggestion points at an exact piece of your text and shows
   the replacement and a short reason.
 - **Per-suggestion Accept / Reject**, plus Accept all / Reject all / Reset. Nothing changes
@@ -15,6 +16,28 @@ reject each suggestion individually. Built with Python, Streamlit and the Groq A
 - Honest reporting: suggestions that cannot be verified against your text are counted and
   explained, not silently dropped. If a later part of a long text fails (rate limit, API
   error), the valid results obtained so far are kept and shown.
+
+## Using the app
+
+1. **Write.** Paste or type your text (or press **Try an example**). The counter under the box
+   shows how many words you have against the limit; **Check text** stays disabled, with the
+   reason shown, until the text and the selected checks are valid.
+2. **Choose checks.** Toggle Grammar, Tone and Clarity, and pick a target tone (used by the
+   tone check only).
+3. **Check.** The text is sent to the API only now. Long texts are checked section by
+   section, with a progress bar.
+4. **Review.** A summary shows how many suggestions each check found and how many you have
+   accepted, rejected or not yet decided. Suggestions are grouped by check; each card shows
+   the original and the replacement, the reason, and its status in words (not only colour).
+   Accept or reject each one, or use **Accept all / Reject all / Reset decisions**.
+5. **Use the result.** The preview marks every suggestion in your text; the corrected text
+   below it contains only the changes you accepted. Copy it with the button in the corner of
+   the box, or **Download .txt**.
+6. **Start again.** **New check** clears the text and the results. If a check fails, the
+   error says why and **Try again** repeats it without retyping anything.
+
+The interface uses a light theme with accessible contrast (WCAG AA for all text), visible
+keyboard focus, and a single-column layout on narrow screens.
 
 ## Quick start
 
@@ -103,13 +126,18 @@ ruff check . && ruff format --check .
 The offline suite never touches the network (sockets are blocked) and covers configuration,
 schemas, the Groq client (retries, rate limits, error mapping), span location, overlap and
 ambiguity handling, deterministic editing (including randomized checks against a reference
-implementation), chunking, partial results, the Streamlit UI (via `streamlit.testing`) and
-repository hygiene (`.env` ignored, no key-like strings in tracked files).
+implementation), chunking, partial results and progress reporting, correction-quality
+regressions, the Streamlit UI (via `streamlit.testing`: empty state, checks, accept/reject,
+accept all, reset, new check, try again, download, long text, errors and HTML escaping), the
+UI fragments in `ui/components.py`, and repository hygiene (`.env` ignored, no key-like
+strings in tracked files).
 
 ## Layout
 
 ```
-app.py              Streamlit UI (thin)
+app.py              Streamlit UI: page layout, state and callbacks (thin)
+ui/components.py    escaped HTML fragments: header, summary, cards, empty and clean states
+ui/styles.css       style layer on top of the theme in .streamlit/config.toml
 core/config.py      .env / environment -> validated Settings
 core/errors.py      typed, user-presentable errors
 core/schemas.py     options, strict JSON schema, output validation, result models

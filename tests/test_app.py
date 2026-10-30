@@ -11,6 +11,7 @@ import core.pipeline
 from core.llm_client import GroqClient as RealGroqClient
 from tests.conftest import FAKE_API_KEY
 from tests.helpers import FakeGroq, ok_response, rate_limit, suggestion
+from ui import components as ui
 
 APP = str(Path(__file__).resolve().parent.parent / "app.py")
 TEXT = "I has a apple. She dont like it."
@@ -75,11 +76,22 @@ def test_missing_api_key_shows_setup_help_and_stops(monkeypatch, tmp_path):
     assert len(at.text_area) == 0  # the app stops before rendering the form
 
 
+def html_text(at):
+    return " ".join(h.value for h in at.html)
+
+
 def test_initial_state(api):
     at = new_app()
     assert not at.exception
     assert at.button(key="check").disabled is True  # nothing to check yet
-    assert at.sidebar.selectbox(key="tone").value == "professional"
+    assert at.button(key="new_check").disabled is True  # nothing to clear yet
+    assert at.selectbox(key="tone").value == "professional"
+    assert at.pills(key="checks").value == ["grammar", "tone", "clarity"]
+    page = html_text(at)
+    assert "Paste or type some text to enable checking" in page  # why Check is disabled
+    assert "Paste your text" in page and "Review each suggestion" in page  # empty state
+    assert "0 / 1,000 words" in page
+    assert len(at.sidebar.children) == 0  # every option is in the main flow now
     assert api.calls == []
 
 
@@ -122,18 +134,18 @@ def test_running_the_check_again_calls_the_api_again_and_resets_decisions(api):
     assert corrected(at) == "She dont like it."
 
 
-def test_no_issues_shows_success(api):
+def test_no_issues_shows_a_clean_result(api):
     api.completions.script = [ok_response([])]
     at = check(new_app())
-    assert "No issues found" in at.success[0].value
-    assert len(at.code) == 0
+    assert "No issues found. Your text looks good." in html_text(at)
+    assert len(at.code) == 0 and len(at.download_button) == 0
 
 
 def test_selected_options_reach_the_request(api):
     api.completions.script = [ok_response([])]
     at = new_app()
-    at.sidebar.checkbox(key="category_grammar").uncheck()
-    at.sidebar.selectbox(key="tone").select("formal")
+    at.pills(key="checks").unselect("grammar").run()
+    at.selectbox(key="tone").select("formal").run()
     at = check(at)
     request = api.calls[0]
     enum = request["response_format"]["json_schema"]["schema"]["properties"]["suggestions"]
@@ -143,12 +155,18 @@ def test_selected_options_reach_the_request(api):
 
 def test_no_category_selected_disables_checking(api):
     at = new_app()
-    for category in ("grammar", "tone", "clarity"):
-        at.sidebar.checkbox(key=f"category_{category}").uncheck()
+    at.pills(key="checks").set_value([]).run()
     at.text_area(key="input_text").set_value(TEXT).run()
     assert at.button(key="check").disabled is True
     assert any("at least one category" in w.value for w in at.warning)
-    assert at.sidebar.selectbox(key="tone").disabled is True
+    assert at.selectbox(key="tone").disabled is True
+
+
+def test_tone_selector_is_disabled_when_the_tone_check_is_off(api):
+    at = new_app()
+    assert at.selectbox(key="tone").disabled is False
+    at.pills(key="checks").unselect("tone").run()
+    assert at.selectbox(key="tone").disabled is True
 
 
 def test_over_limit_input_is_blocked_before_any_api_call(api, monkeypatch):
@@ -230,6 +248,110 @@ def test_unexpected_errors_are_shown_generically(api, monkeypatch):
     assert not at.exception
     assert at.error[0].value == "Something went wrong while checking your text. Please try again."
     assert not any("super secret" in t or FAKE_API_KEY in t for t in all_text(at))
+
+
+def test_example_button_fills_the_box_without_calling_the_api(api):
+    at = new_app()
+    at.button(key="example").click().run()
+    assert at.text_area(key="input_text").value == ui.EXAMPLE_TEXT
+    assert at.button(key="check").disabled is False
+    assert api.calls == []  # loading the example never sends anything
+
+
+def test_new_check_clears_the_text_the_results_and_the_decisions(api):
+    api.completions.script = [ok_response([sug("has", "have", "I ")])]
+    at = check(new_app())
+    at.button(key="accept_s1").click().run()
+    assert at.button(key="new_check").disabled is False
+    at.button(key="new_check").click().run()
+    assert at.text_area(key="input_text").value == ""
+    assert at.session_state["result"] is None and at.session_state["decisions"] == {}
+    assert not any(b.key and b.key.startswith("accept_") for b in at.button)
+    assert "Review each suggestion" in html_text(at)  # back to the empty state
+    assert len(api.calls) == 1
+
+
+def test_try_again_after_a_total_failure_checks_the_same_text_again(api):
+    api.completions.script = [rate_limit(), ok_response([sug("has", "have", "I ")])]
+    at = check(new_app())
+    assert "could not be checked" in at.error[0].value
+    at.button(key="retry").click().run()
+    assert len(api.calls) == 2 and not at.error
+    assert TEXT in api.calls[1]["messages"][1]["content"]
+    assert at.button(key="accept_s1").value is False  # the new result is reviewable
+
+
+def test_try_again_after_an_unexpected_error(api, monkeypatch):
+    real_run_check = core.pipeline.run_check
+    calls = []
+
+    def flaky(*args, **kwargs):
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("temporary")
+        return real_run_check(*args, **kwargs)
+
+    monkeypatch.setattr(core.pipeline, "run_check", flaky)
+    api.completions.script = [ok_response([])]
+    at = check(new_app())
+    assert at.error[0].value == "Something went wrong while checking your text. Please try again."
+    at.button(key="retry").click().run()
+    assert not at.error and "No issues found" in html_text(at)
+
+
+def test_summary_groups_suggestions_by_category_and_tracks_decisions(api):
+    text = "I has a apple. We gotta go now in order to be on time."
+    api.completions.script = [
+        ok_response(
+            [
+                suggestion("in order to", "to", "clarity", "Shorter.", ""),
+                suggestion("gotta", "have to", "tone", "More professional.", "We "),
+                suggestion("has", "have", "grammar", "Agreement.", "I "),
+                suggestion("a apple", "an apple", "grammar", "Article.", "has "),
+            ]
+        )
+    ]
+    at = check(new_app(), text)
+    page = html_text(at)
+    assert "4 suggestions" in page
+    assert "0 accepted" in page and "4 to review" in page
+    # groups follow the fixed order grammar -> tone -> clarity, whatever the model's order
+    order = [page.index(f"gsc-group gsc-group--{c}") for c in ("grammar", "tone", "clarity")]
+    assert order == sorted(order)
+    assert page.count("Not decided") == 4
+
+    at.button(key="accept_s1").click().run()
+    at.button(key="reject_s3").click().run()
+    page = html_text(at)
+    assert "1 accepted" in page and "1 rejected" in page and "2 to review" in page
+    assert page.count("Accepted") == 1 and page.count("Rejected") == 1
+    assert corrected(at) == "I have a apple. We gotta go now in order to be on time."
+
+
+def test_corrected_text_can_be_copied_and_downloaded(api):
+    api.completions.script = [ok_response([sug("has", "have", "I "), sug("dont", "don't")])]
+    at = check(new_app())
+    at.button(key="accept_all").click().run()
+    expected = "I have a apple. She don't like it."
+    assert corrected(at) == expected  # st.code provides the copy button
+    (download,) = at.download_button
+    assert download.key == "download_corrected"
+    assert any("copy button" in c.value for c in at.caption)
+
+
+def test_long_text_is_checked_section_by_section(api, monkeypatch):
+    monkeypatch.setenv("MAX_CHUNK_WORDS", "20")
+    api.completions.script = [
+        ok_response([sug("has", "have", "I ")]),
+        ok_response([sug("dont", "don't")]),
+    ]
+    at = check(new_app(), f"{P1}\n\n{P2}")
+    assert not at.exception and len(api.calls) == 2
+    assert [b.key for b in at.button if b.key and b.key.startswith("accept_s")] == [
+        "accept_s1",
+        "accept_s2",
+    ]
+    assert len(at.get("progress")) == 0  # the progress bar is removed once the check is done
 
 
 def test_api_key_never_appears_in_the_rendered_page(api):

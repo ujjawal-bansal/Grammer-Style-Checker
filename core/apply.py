@@ -152,10 +152,16 @@ def apply_accepted(
     return "".join(pieces)
 
 
-_STYLE_PENDING = "background:#fff3b0;color:#000;border-radius:3px;padding:0 2px;"
-_STYLE_DEL = "background:#ffd6d6;color:#7a0000;text-decoration:line-through;padding:0 2px;"
-_STYLE_INS = "background:#d4f5d4;color:#064d06;padding:0 2px;"
-_STYLE_REJECTED = "border-bottom:1px dotted #888;"
+# Inline styles so the preview reads correctly even without the app's stylesheet. The colours
+# match ui/styles.css and keep text contrast at WCAG AA or better on each background.
+_STYLE_PENDING = "background:#fbecc4;color:#23201a;border-radius:3px;padding:0 2px;"
+_STYLE_DEL = (
+    "background:#f8e3df;color:#94382e;text-decoration:line-through;border-radius:3px;padding:0 2px;"
+)
+_STYLE_INS = (
+    "background:#e3efe5;color:#2d6639;text-decoration:none;border-radius:3px;padding:0 2px;"
+)
+_STYLE_REJECTED = "border-bottom:1.5px dotted #665d4d;"
 
 
 def _esc(value: str) -> str:
