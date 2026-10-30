@@ -69,8 +69,20 @@ def test_prompt_shows_the_contraction_fix_and_forbids_the_tense_rewrite():
 
 
 def test_prompt_examples_cover_correct_and_ambiguous_text():
-    assert '"their car is red." and "she has lived here for years." are correct' in PROMPT
+    assert (
+        '"their car is red.", "their dog is asleep, and they\'re at work." and "she has lived '
+        'here for years." are correct: no suggestion'
+    ) in PROMPT
     assert '"i saw her duck." is ambiguous: no suggestion' in PROMPT
+
+
+def test_prompt_protects_correct_possessives_from_contraction_fixes():
+    # Regression: with the broken-sentence rules alone, the model turned the correct
+    # "Their car ..." into "They're car ..." in every live run.
+    assert "possessives are not contractions" in PROMPT
+    assert '"their", "your" and "its" followed by a noun' in PROMPT
+    assert "check that the original is really wrong and the replacement is really right" in PROMPT
+    assert "their car is parked outside" not in PROMPT  # not tuned to the evaluation sentence
 
 
 def test_prompt_covers_punctuation_with_a_complete_fix_and_a_generic_example():
